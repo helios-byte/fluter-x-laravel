@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'create.dart';
 import 'edit.dart';
-import 'signin_page.dart'; // Pastikan ada halaman SignInPage
+import 'signin_page.dart'; 
 
 class TodoListPage extends StatefulWidget {
   const TodoListPage({super.key});
@@ -119,95 +119,201 @@ class _TodoListPageState extends State<TodoListPage> {
     super.initState();
     fetchTodos();
   }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF102C57),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF102C57),
-        title: const Text('To-Do List', style: TextStyle(color: Colors.white)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
-            onPressed: logout,
-            tooltip: 'Logout',
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: const Color(0xFFFBE8A6), // krem lembut
+    appBar: AppBar(
+      backgroundColor: const Color(0xFF6B4226), // coklat tua
+      elevation: 0,
+      title: Row(
+        children: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onSelected: (value) {
+              if (value == 'logout') logout();
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'logout', child: Text('Logout')),
+            ],
+          ),
+          const SizedBox(width: 8),
+          const Text(
+            'FluTodo',
+            style: TextStyle(
+              color: Colors.white,
+              fontFamily: 'Georgia',
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+            ),
           ),
         ],
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.white))
-          : ListView.builder(
-              itemCount: todos.length,
-              itemBuilder: (_, i) {
-                final item = todos[i];
-                return Card(
-                  color: const Color(0xFF1C3A6F),
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  child: ListTile(
-                    leading: Checkbox(
-                      value: item['selesai'] == 1 || item['selesai'] == true,
-                      onChanged: (val) {
-                        if (val != null) {
-                          toggleIsDone(item['id_todo'], val);
-                        }
-                      },
-                      activeColor: Colors.white,
-                      checkColor: const Color(0xFF102C57),
+    ),
+    body: isLoading
+        ? const Center(child: CircularProgressIndicator(color: Color(0xFF6B4226)))
+        : ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+            itemCount: todos.length,
+            itemBuilder: (context, i) {
+              final item = todos[i];
+              final isDone = item['selesai'] == 1 || item['selesai'] == true;
+
+              return TweenAnimationBuilder<double>(
+                duration: Duration(milliseconds: 400 + (i * 100)),
+                tween: Tween(begin: 0.0, end: 1.0),
+                builder: (context, value, child) {
+                  return Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(0, 30 * (1 - value)),
+                      child: child,
                     ),
-                    title: Text(
-                    '${item['list'] ?? ''} | ${item['status'] ?? ''}',
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                    ),
-                    ),
-                    subtitle: Text(
-                      item['tanggal'],
-                      style: const TextStyle(color: Colors.white70),
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.white),
-                          onPressed: () async {
-                            final updated = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => EditTodoPage(
-                                  todo: item,
-                                  id: item['id_todo'],
-                                ),
-                              ),
-                            );
-                            if (updated == true) fetchTodos();
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.white),
-                          onPressed: () => deleteTodo(item['id_todo']),
+                  );
+                },
+                child: Center(
+                  child: Container(
+                    width: 500,
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF8E1), // kertas klasik
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFD7CCC8), width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.brown.withOpacity(0.2),
+                          blurRadius: 6,
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                      leading: Checkbox(
+                        value: isDone,
+                        onChanged: (val) {
+                          if (val != null) toggleIsDone(item['id_todo'], val);
+                        },
+                        activeColor: const Color(0xFF8D6E63),
+                        checkColor: Colors.white,
+                      ),
+                      title: Text(
+                        item['list'] ?? '',
+                        style: TextStyle(
+                          color: const Color(0xFF4E342E),
+                          fontFamily: 'Georgia',
+                          fontWeight: FontWeight.bold,
+                          decoration: isDone ? TextDecoration.lineThrough : null,
+                          fontSize: 16,
+                        ),
+                      ),
+                      subtitle: Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item['tanggal'],
+                              style: const TextStyle(
+                                color: Color(0xFF6D4C41),
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                            Text(
+                              'Prioritas: ${item['status'] ?? ''}',
+                              style: TextStyle(
+                                color: item['status'] == 'high'
+                                    ? Colors.red[800]
+                                    : item['status'] == 'medium'
+                                        ? Colors.orange[800]
+                                        : Colors.green[700],
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            if (isDone)
+                              const Text(
+                                '✔ Selesai',
+                                style: TextStyle(
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      trailing: Wrap(
+                        spacing: 2,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.description, color: Color(0xFF6D4C41)),
+                            tooltip: 'Deskripsi',
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (_) => AlertDialog(
+                                  backgroundColor: const Color(0xFFFFF3E0),
+                                  title: const Text(
+                                    'Deskripsi',
+                                    style: TextStyle(color: Color(0xFF4E342E), fontWeight: FontWeight.bold),
+                                  ),
+                                  content: Text(
+                                    item['deskripsi'] ?? 'Tidak ada deskripsi',
+                                    style: const TextStyle(color: Color(0xFF6D4C41)),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text(
+                                        'Tutup',
+                                        style: TextStyle(color: Color(0xFF6B4226)),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.edit, color: Color(0xFFB77E3B)),
+                            tooltip: 'Edit',
+                            onPressed: () async {
+                              final updated = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => EditTodoPage(
+                                    todo: item,
+                                    id: item['id_todo'],
+                                  ),
+                                ),
+                              );
+                              if (updated == true) fetchTodos();
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.redAccent),
+                            tooltip: 'Hapus',
+                            onPressed: () => deleteTodo(item['id_todo']),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                );
-              },
-            ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF1C3A6F),
-        onPressed: () async {
-          final created = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const CreateTodoPage(),
-            ),
-          );
-          if (created == true) fetchTodos();
-        },
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-    );
-  }
+                ),
+              );
+            },
+          ),
+    floatingActionButton: FloatingActionButton(
+      backgroundColor: const Color(0xFFB77E3B),
+      onPressed: () async {
+        final created = await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CreateTodoPage()),
+        );
+        if (created == true) fetchTodos();
+      },
+      child: const Icon(Icons.add, color: Colors.white),
+    ),
+  );
+}
 }
